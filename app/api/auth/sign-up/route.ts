@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 
 function cpfEmail(cpf: string) {
   return `${cpf}@cpf.atlas.local`
@@ -18,12 +18,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'A senha deve ter pelo menos 8 caracteres.' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const admin = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    )
     const email = cpfEmail(cpf)
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await admin.auth.admin.createUser({
       email,
       password,
-      options: { data: { cpf } },
+      email_confirm: true,
+      user_metadata: { cpf },
     })
 
     if (error) {

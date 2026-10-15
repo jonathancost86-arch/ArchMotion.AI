@@ -46,7 +46,18 @@ export default function SignUpPage() {
       return
     }
 
-    router.push('/auth/login?created=1')
+    const { error: signInError } = await createClient().auth.signInWithPassword({
+      email: `${normalizedCpf}@cpf.atlas.local`,
+      password,
+    })
+
+    if (signInError) {
+      setError('A conta foi criada, mas não foi possível iniciar a sessão. Entre novamente com seu CPF e senha.')
+      setLoading(false)
+      return
+    }
+
+    router.replace('/')
   }
 
   return (
