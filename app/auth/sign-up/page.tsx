@@ -8,7 +8,6 @@ import { createClient } from '@/lib/supabase/client'
 
 export default function SignUpPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
   const [cpf, setCpf] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -34,27 +33,15 @@ export default function SignUpPage() {
     }
 
     setLoading(true)
-    const { error: signUpError } = await createClient().auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-      options: {
-        emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? `${window.location.origin}/auth/callback`,
-        data: { cpf: normalizedCpf },
-      },
+    const response = await fetch('/api/auth/sign-up', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ cpf: normalizedCpf, password }),
     })
+    const result = await response.json()
 
-    if (signUpError) {
-      const message = signUpError.message.toLowerCase()
-      const friendlyMessage = signUpError.status === 429
-        ? 'Muitas tentativas. Aguarde um momento.'
-        : message.includes('email_not_authorized') || message.includes('not authorized')
-          ? 'Este projeto ainda não está autorizado a enviar email para esse endereço. Use um email permitido pelo projeto ou configure o SMTP.'
-          : message.includes('already registered') || message.includes('already exists')
-            ? 'Este email já possui uma conta. Entre ou use outro email.'
-            : message.includes('invalid')
-              ? 'Confira o formato do email e os dados informados.'
-              : 'Não foi possível conectar ao serviço de contas. Tente novamente em instantes.'
-      setError(friendlyMessage)
+    if (!response.ok) {
+      setError(result.error ?? 'Não foi possível criar a conta agora.')
       setLoading(false)
       return
     }
@@ -73,7 +60,6 @@ export default function SignUpPage() {
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">Crie sua conta.</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">Seus dados ficam separados e protegidos na sua própria conta.</p>
         <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
-          <label className="flex flex-col gap-2 text-sm"><span className="font-medium">Email</span><input type="email" required autoComplete="email" placeholder="voce@email.com" value={email} onChange={(event) => setEmail(event.target.value)} className="h-11 rounded-xl border border-input bg-background px-3 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring" /></label>
           <label className="flex flex-col gap-2 text-sm"><span className="font-medium">CPF</span><input type="text" required inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" value={cpf} onChange={(event) => setCpf(event.target.value)} className="h-11 rounded-xl border border-input bg-background px-3 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring" /></label>
           <label className="flex flex-col gap-2 text-sm"><span className="font-medium">Senha</span><input type="password" required minLength={8} autoComplete="new-password" placeholder="Mínimo de 8 caracteres" value={password} onChange={(event) => setPassword(event.target.value)} className="h-11 rounded-xl border border-input bg-background px-3 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring" /></label>
           <label className="flex flex-col gap-2 text-sm"><span className="font-medium">Confirme a senha</span><input type="password" required minLength={8} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="h-11 rounded-xl border border-input bg-background px-3 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring" /></label>
