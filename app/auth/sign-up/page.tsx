@@ -44,7 +44,17 @@ export default function SignUpPage() {
     })
 
     if (signUpError) {
-      setError(signUpError.status === 429 ? 'Muitas tentativas. Aguarde um momento.' : 'Não foi possível criar a conta. Verifique os dados e tente novamente.')
+      const message = signUpError.message.toLowerCase()
+      const friendlyMessage = signUpError.status === 429
+        ? 'Muitas tentativas. Aguarde um momento.'
+        : message.includes('email_not_authorized') || message.includes('not authorized')
+          ? 'Este projeto ainda não está autorizado a enviar email para esse endereço. Use um email permitido pelo projeto ou configure o SMTP.'
+          : message.includes('already registered') || message.includes('already exists')
+            ? 'Este email já possui uma conta. Entre ou use outro email.'
+            : message.includes('invalid')
+              ? 'Confira o formato do email e os dados informados.'
+              : 'Não foi possível conectar ao serviço de contas. Tente novamente em instantes.'
+      setError(friendlyMessage)
       setLoading(false)
       return
     }
